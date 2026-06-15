@@ -315,27 +315,27 @@
 
                             {{-- NIP / NIM --}}
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">NIP / NIM <span class="text-danger">*</span></label>
-                                <input type="text" name="identity" value="{{ old('identity') }}" required
-                                       class="form-control @error('identity') is-invalid @enderror" placeholder="Nomor identitas...">
+                                <label class="form-label fw-semibold" for="identity">NIP / NIM <span class="text-danger">*</span></label>
+                                <input type="text" id="identity" name="identity" value="{{ old('identity') }}" required
+                                    class="form-control @error('identity') is-invalid @enderror" placeholder="Nomor identitas...">
                                 @error('identity')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
 
                             {{-- Nama Lengkap --}}
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
-                                <input type="text" name="name" value="{{ old('name') }}" required
-                                       class="form-control @error('name') is-invalid @enderror" placeholder="Masukkan nama lengkap...">
+                                <label class="form-label fw-semibold" for="name">Nama Lengkap <span class="text-danger">*</span></label>
+                                <input type="text" id="name" name="name" value="{{ old('name') }}" required
+                                    class="form-control @error('name') is-invalid @enderror" placeholder="Masukkan nama lengkap...">
                                 @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
 
                             {{-- Inisial (bukan mahasiswa) --}}
                             @if($role !== 'mahasiswa')
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Inisial Nama <small class="text-muted fw-normal">(opsional)</small></label>
-                                <input type="text" name="initials" id="initialsModal" value="{{ old('initials') }}" maxlength="20"
-                                       class="form-control text-uppercase @error('initials') is-invalid @enderror"
-                                       style="font-family:monospace;" placeholder="Contoh: JDS">
+                                <label class="form-label fw-semibold" for="initialsModal">Inisial Nama <small class="text-muted fw-normal">(opsional)</small></label>
+                                <input type="text" id="initialsModal" name="initials" value="{{ old('initials') }}" maxlength="20"
+                                    class="form-control text-uppercase @error('initials') is-invalid @enderror"
+                                    style="font-family:monospace;" placeholder="Contoh: JDS">
                                 <div class="form-text">Maksimal 20 karakter.</div>
                                 @error('initials')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
@@ -343,9 +343,9 @@
 
                             {{-- Email --}}
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
-                                <input type="email" name="email" value="{{ old('email') }}" required
-                                       class="form-control @error('email') is-invalid @enderror" placeholder="contoh@email.com">
+                                <label class="form-label fw-semibold" for="email">Email <span class="text-danger">*</span></label>
+                                <input type="email" id="email" name="email" value="{{ old('email') }}" required
+                                    class="form-control @error('email') is-invalid @enderror" placeholder="contoh@email.com">
                                 @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
 
@@ -354,8 +354,8 @@
                             {{-- Konsentrasi (mahasiswa) --}}
                             @if($role === 'mahasiswa')
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Konsentrasi <span class="text-danger">*</span></label>
-                                <select name="konsentrasi" required
+                                <label class="form-label fw-semibold" for="konsentrasi">Konsentrasi <span class="text-danger">*</span></label>
+                                <select id="konsentrasi" name="konsentrasi" required
                                         class="form-select @error('konsentrasi') is-invalid @enderror">
                                     <option value="" disabled {{ old('konsentrasi') ? '' : 'selected' }}>Pilih konsentrasi...</option>
                                     @foreach($konsentrasiList as $k)
@@ -371,7 +371,7 @@
                             {{-- Jabatan + Bidang (pimpinan) --}}
                             @if($isPimpinanTab)
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Jabatan <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold" for="jabatanTambah">Jabatan <span class="text-danger">*</span></label>
                                 <select name="jabatan" id="jabatanTambah" required
                                         class="form-select @error('jabatan') is-invalid @enderror"
                                         onchange="toggleBidangTambah(this.value)">
@@ -383,7 +383,7 @@
                             </div>
 
                             <div class="col-md-6 {{ old('jabatan') === 'wakil_dekan' ? '' : 'd-none' }}" id="bidangWrapTambah">
-                                <label class="form-label fw-semibold">Bidang <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold" for="bidangTambah">Bidang <span class="text-danger">*</span></label>
                                 <select name="bidang" id="bidangTambah"
                                         class="form-select @error('bidang') is-invalid @enderror"
                                         {{ old('jabatan') === 'wakil_dekan' ? 'required' : '' }}>
@@ -408,7 +408,7 @@
                             {{-- Jurusan (dipilih dulu, prodi akan difilter otomatis) --}}
                             @if($needsJurusan)
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Jurusan @if(!$isAdminJurusan)<span class="text-danger">*</span>@endif</label>
+                                <label class="form-label fw-semibold" for="tambahJurusan">Jurusan @if(!$isAdminJurusan)<span class="text-danger">*</span>@endif</label>
                                 @if($isAdminJurusan)
                                     <input type="text" class="form-control" value="{{ optional(auth()->user()->jurusan)->nama_jurusan ?? '—' }}" readonly>
                                 @else
@@ -430,7 +430,7 @@
                             {{-- Prodi yang Dikepalai (khusus kaprodi) --}}
                             @if($role === 'kaprodi')
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">
+                                <label class="form-label fw-semibold" for="tambahProdiKepalai">
                                     Prodi yang Dikepalai
                                     <span class="text-danger">*</span>
                                     <small class="text-muted fw-normal ms-1">— jabatan struktural</small>
@@ -455,7 +455,7 @@
                             {{-- Program Studi Asal / Dosen (difilter berdasarkan jurusan yang dipilih) --}}
                             @if($needsProdi)
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">
+                                <label class="form-label fw-semibold" for="tambahProdi">
                                     @if($role === 'kaprodi')
                                         Prodi Asal <small class="text-muted fw-normal ms-1">— sebagai dosen</small>
                                     @else
@@ -515,28 +515,27 @@
                         <div class="row g-3">
 
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">NIP / NIM <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold" for="editIdentity">NIP / NIM <span class="text-danger">*</span></label>
                                 <input type="text" name="identity" id="editIdentity" required class="form-control">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
-                                <input type="text" name="name" id="editName" required class="form-control">
+                                <label class="form-label fw-semibold" for="editName">Nama Lengkap <span class="text-danger">*</span></label>
+                            <input type="text" name="name" id="editName" required class="form-control">
                             </div>
                             <div class="col-md-6" id="editInitialsWrap">
-                                <label class="form-label fw-semibold">Inisial Nama <small class="text-muted fw-normal">(opsional)</small></label>
-                                <input type="text" name="initials" id="editInitials" maxlength="20"
-                                       class="form-control text-uppercase" style="font-family:monospace;" placeholder="Contoh: JDS">
+                                <label class="form-label fw-semibold" for="editInitials">Inisial Nama</label>
+                                <input type="text" name="initials" id="editInitials" maxlength="20" class="form-control text-uppercase" style="font-family:monospace;" placeholder="Contoh: JDS">
                                 <div class="form-text">Maksimal 20 karakter.</div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold" for="editEmail">Email <span class="text-danger">*</span></label>
                                 <input type="email" name="email" id="editEmail" required class="form-control">
                             </div>
                             <input type="hidden" name="role" id="editRole" value="">
 
                             {{-- Konsentrasi --}}
                             <div class="col-md-6 d-none" id="editKonsentrasiWrap">
-                                <label class="form-label fw-semibold">Konsentrasi <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold" for="editKonsentrasi">Konsentrasi</label>
                                 <select name="konsentrasi" id="editKonsentrasi" class="form-select">
                                     <option value="" disabled selected>Pilih konsentrasi...</option>
                                     @foreach(\App\Models\Konsentrasi::orderBy('kode')->get() as $k)
@@ -547,7 +546,7 @@
 
                             {{-- Jabatan (pimpinan) --}}
                             <div class="col-md-6 d-none" id="editJabatanWrap">
-                                <label class="form-label fw-semibold">Jabatan <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold" for="editJabatan">Jabatan</label>
                                 <select name="jabatan" id="editJabatan" class="form-select"
                                         onchange="toggleBidangEdit(this.value)">
                                     <option value="" disabled>Pilih jabatan...</option>
@@ -558,7 +557,7 @@
 
                             {{-- Bidang (wakil dekan) --}}
                             <div class="col-md-6 d-none" id="editBidangWrap">
-                                <label class="form-label fw-semibold">Bidang <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold" for="editBidang">Bidang</label>
                                 <select name="bidang" id="editBidang" class="form-select">
                                     <option value="" disabled>Pilih bidang...</option>
                                     <option value="Akademik">Wakil Dekan Bidang Akademik</option>
@@ -569,7 +568,7 @@
 
                             {{-- Jurusan (dipilih dulu, prodi akan difilter otomatis) --}}
                             <div class="col-md-6 d-none" id="editJurusanWrap">
-                                <label class="form-label fw-semibold">Jurusan</label>
+                                <label class="form-label fw-semibold" for="editJurusan">Jurusan</label>
                                 @if($isAdminJurusan)
                                     <input type="text" class="form-control" value="{{ optional(auth()->user()->jurusan)->nama_jurusan ?? '—' }}" readonly>
                                 @else
@@ -585,7 +584,7 @@
 
                             {{-- Prodi yang Dikepalai (khusus kaprodi, dikontrol JS) --}}
                             <div class="col-md-6 d-none" id="editProdiKepalaiWrap">
-                                <label class="form-label fw-semibold">
+                                <label class="form-label fw-semibold" for="editProdiKepalai">
                                     Prodi yang Dikepalai
                                     <span class="text-danger">*</span>
                                     <small class="text-muted fw-normal ms-1">— jabatan struktural</small>
@@ -601,7 +600,7 @@
 
                             {{-- Program Studi Asal (difilter berdasarkan jurusan yang dipilih) --}}
                             <div class="col-md-6 d-none" id="editProdiWrap">
-                                <label class="form-label fw-semibold" id="editProdiLabel">Program Studi</label>
+                                <label class="form-label fw-semibold" for="editProdi">Program Studi</label>
                                 <select name="program_studi_id" id="editProdi" class="form-select">
                                     <option value="">— Pilih Program Studi —</option>
                                     @foreach($prodiList as $p)
