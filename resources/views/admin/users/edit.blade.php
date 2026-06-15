@@ -10,22 +10,22 @@
 
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">NIP / NIM <span class="text-danger">*</span></label>
-                    <input type="text" name="identity" value="{{ old('identity', $user->identity) }}" required
+                    <label class="form-label fw-semibold" for="identity">NIP / NIM <span class="text-danger">*</span></label>
+                    <input type="text" name="identity" id="identity" value="{{ old('identity', $user->identity) }}" required
                            class="form-control @error('identity') is-invalid @enderror">
                     @error('identity')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
-                    <input type="text" name="name" value="{{ old('name', $user->name) }}" required
+                    <label class="form-label fw-semibold" for="name">Nama Lengkap <span class="text-danger">*</span></label>
+                    <input type="text" name="name" id="name" value="{{ old('name', $user->name) }}" required
                            class="form-control @error('name') is-invalid @enderror">
                     @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
                 @if($user->role !== 'mahasiswa')
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">Inisial Nama <small class="text-muted fw-normal">(opsional)</small></label>
+                    <label class="form-label fw-semibold" for="initials">Inisial Nama <small class="text-muted fw-normal">(opsional)</small></label>
                     <input type="text" name="initials" id="initials" value="{{ old('initials', $user->initials) }}" maxlength="20"
                            class="form-control text-uppercase @error('initials') is-invalid @enderror" style="font-family:monospace;" placeholder="Contoh: JDS">
                     <div class="form-text">Maksimal 20 karakter.</div>
@@ -34,8 +34,8 @@
                 @endif
 
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
-                    <input type="email" name="email" value="{{ old('email', $user->email) }}" required
+                    <label class="form-label fw-semibold" for="email">Email <span class="text-danger">*</span></label>
+                    <input type="email" name="email" id="email" value="{{ old('email', $user->email) }}" required
                            class="form-control @error('email') is-invalid @enderror">
                     @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -44,7 +44,7 @@
 
                 {{-- ── Jurusan ── --}}
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">Jurusan</label>
+                    <label class="form-label fw-semibold" for="jurusan_id">Jurusan</label>
                     <select name="jurusan_id" id="jurusan_id"
                             class="form-select @error('jurusan_id') is-invalid @enderror">
                         <option value="">— Pilih Jurusan —</option>
@@ -58,14 +58,15 @@
                     @error('jurusan_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
-                {{-- ── Program Studi (semua role kecuali admin/tendik/plp) ── --}}
+                {{-- ── Program Studi ── --}}
                 @php
                     $roleButuhProdi = in_array($user->role, ['dosen','kaprodi','kajur','dekan','wakil_dekan','mahasiswa']);
                     $currentProdiId = old('program_studi_id', $currentProdiId);
                 @endphp
+
                 @if($roleButuhProdi)
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">
+                    <label class="form-label fw-semibold" for="program_studi_id">
                         Program Studi
                         @if(in_array($user->role, ['kaprodi','kajur','dosen','mahasiswa']))
                             <span class="text-danger">*</span>
@@ -94,8 +95,8 @@
                     $konsentrasiList = \App\Models\Konsentrasi::orderBy('kode')->get();
                 @endphp
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">Konsentrasi <span class="text-danger">*</span></label>
-                    <select name="konsentrasi" required
+                    <label class="form-label fw-semibold" for="konsentrasi">Konsentrasi <span class="text-danger">*</span></label>
+                    <select name="konsentrasi" id="konsentrasi" required
                             class="form-select @error('konsentrasi') is-invalid @enderror">
                         <option value="" disabled {{ $currKons ? '' : 'selected' }}>Pilih konsentrasi...</option>
                         @foreach($konsentrasiList as $k)
@@ -120,6 +121,7 @@
                 </button>
             </div>
         </form>
+
         <form id="reset-pw-form" action="{{ route('users.resetPassword', $user) }}" method="POST" class="d-none">@csrf</form>
     </div>
 
@@ -131,7 +133,6 @@
             ini.setSelectionRange(p, p);
         });
 
-        // ── Dropdown jurusan → prodi dinamis ───────────────────────────
         const jurusanSel = document.getElementById('jurusan_id');
         const prodiSel   = document.getElementById('program_studi_id');
         const prodiHint  = document.getElementById('prodi-hint');
@@ -152,28 +153,24 @@
                     const res  = await fetch(`${apiBase}/${jurusanId}/prodi`);
                     const data = await res.json();
                     prodiSel.innerHTML = '<option value="">— Pilih Program Studi —</option>';
-                    if (data.length === 0) {
-                        if (prodiHint) prodiHint.textContent = 'Tidak ada program studi untuk jurusan ini.';
-                    } else {
-                        data.forEach(p => {
-                            const opt = document.createElement('option');
-                            opt.value = p.id;
-                            opt.textContent = p.nama_prodi + (p.kode ? ` (${p.kode})` : '');
-                            if (selectedId && p.id == selectedId) opt.selected = true;
-                            prodiSel.appendChild(opt);
-                        });
-                        if (prodiHint) prodiHint.textContent = '';
-                    }
+
+                    data.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.textContent = p.nama_prodi + (p.kode ? ` (${p.kode})` : '');
+                        if (selectedId && p.id == selectedId) opt.selected = true;
+                        prodiSel.appendChild(opt);
+                    });
+
                     prodiSel.disabled = false;
+                    if (prodiHint) prodiHint.textContent = '';
                 } catch (e) {
                     prodiSel.innerHTML = '<option value="">Gagal memuat data</option>';
                 }
             }
 
-            // Saat jurusan diganti, reset prodi
             jurusanSel.addEventListener('change', () => loadProdi(jurusanSel.value));
 
-            // Pre-load prodi sesuai jurusan yang sudah tersimpan
             const initJurusan = jurusanSel.value;
             if (initJurusan) {
                 loadProdi(initJurusan, currentProdiId);
