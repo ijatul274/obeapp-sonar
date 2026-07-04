@@ -19,12 +19,38 @@ class ClassroomController extends Controller
         return Classroom::currentPeriod();
     }
 
+    private function isJurusanScoped(?User $user): bool
+    {
+        return $user
+            && in_array($user->role, ['admin_jurusan', 'kaprodi'], true)
+            && $user->jurusan_id;
+    }
+
+    private function applyJurusanClassroomFilter($query, int $jurusanId): void
+    {
+        $query->where(function ($q) use ($jurusanId) {
+            $q->whereHas('lecturer', fn($lq) => $lq->where('jurusan_id', $jurusanId))
+                ->orWhereHas('cpmkLecturers', fn($lq) => $lq->where('jurusan_id', $jurusanId));
+        });
+    }
+
+    private function getDosenByAuth(?User $auth)
+    {
+        $dosenQuery = User::dosenAkademik()->orderBy('name');
+
+        if ($this->isJurusanScoped($auth)) {
+            $dosenQuery->where('jurusan_id', $auth->jurusan_id);
+        }
+
+        return $dosenQuery->get();
+    }
+
     /* ── Index ───────────────────────────────────────────────── */
     public function index(Request $request)
     {
         Classroom::autoArchiveExpired();
 
-        $period = $activePeriod = $this->activePeriod();
+        $activePeriod = $this->activePeriod();
 
         $years = Classroom::select('academic_year')
             ->whereNotNull('academic_year')
@@ -48,34 +74,23 @@ class ClassroomController extends Controller
             $query->where('semester', $request->semester);
         }
 
-        // Filter kelas berdasarkan role yang sedang login
         $auth = Auth::user();
 
-        if ($auth && $auth->role === 'admin_jurusan' && $auth->jurusan_id) {
-            $jurusanId = $auth->jurusan_id;
-
-            $query->where(function ($q) use ($jurusanId) {
-                $q->whereHas('lecturer', fn($lq) => $lq->where('jurusan_id', $jurusanId))
-                  ->orWhereHas('cpmkLecturers', fn($lq) => $lq->where('jurusan_id', $jurusanId));
-            });
-        } elseif ($auth && $auth->role === 'kaprodi' && $auth->jurusan_id) {
-            $jurusanId = $auth->jurusan_id;
-
-            $query->where(function ($q) use ($jurusanId) {
-                $q->whereHas('lecturer', fn($lq) => $lq->where('jurusan_id', $jurusanId))
-                  ->orWhereHas('cpmkLecturers', fn($lq) => $lq->where('jurusan_id', $jurusanId));
-            });
+        if ($this->isJurusanScoped($auth)) {
+            $this->applyJurusanClassroomFilter($query, $auth->jurusan_id);
         }
 
-        $classrooms = $query->orderBy('period_type')->orderBy('semester')->orderBy('name')->get();
-        $allCourses = Course::with('cpmks')->orderBy('semester')->orderBy('name')->get();
+        $classrooms = $query->orderBy('period_type')
+            ->orderBy('semester')
+            ->orderBy('name')
+            ->get();
 
-        // Dropdown dosen: hanya dosen dari jurusan yang sama
-        $dosenQuery = User::dosenAkademik()->orderBy('name');
-        if ($auth && in_array($auth->role, ['admin_jurusan', 'kaprodi']) && $auth->jurusan_id) {
-            $dosenQuery->where('jurusan_id', $auth->jurusan_id);
-        }
-        $dosens = $dosenQuery->get();
+        $allCourses = Course::with('cpmks')
+            ->orderBy('semester')
+            ->orderBy('name')
+            ->get();
+
+        $dosens = $this->getDosenByAuth($auth);
 
         $jsCoursesData = $allCourses->map(fn($c) => [
             'id'   => (string) $c->id,
@@ -88,7 +103,7 @@ class ClassroomController extends Controller
             'id'        => (string) $cp->id,
             'course_id' => (string) $c->id,
             'code'      => $cp->code,
-            'name'      => $cp->code . ' — ' . \Str::limit($cp->description, 60),
+            'name'      => $cp->code . ' — ' . Str::limit($cp->description, 60),
             'meetings'  => $cp->meeting_range,
         ]))->values();
 
@@ -126,7 +141,6 @@ class ClassroomController extends Controller
         $course = Course::findOrFail($validated['course_id']);
         $validated['semester'] = $course->semester;
 
-        // Perbaikan Sonar: gunakan generator acak yang lebih aman
         do {
             $code = Str::upper(Str::random(8));
         } while (Classroom::where('enrollment_code', $code)->exists());
@@ -172,11 +186,7 @@ class ClassroomController extends Controller
         $classroom->load(['course.cpmks', 'lecturer', 'students', 'cpmks']);
 
         $auth = Auth::user();
-        $dosenQuery = User::dosenAkademik()->orderBy('name');
-        if ($auth && in_array($auth->role, ['admin_jurusan', 'kaprodi']) && $auth->jurusan_id) {
-            $dosenQuery->where('jurusan_id', $auth->jurusan_id);
-        }
-        $dosens = $dosenQuery->get();
+        $dosens = $this->getDosenByAuth($auth);
 
         $semesterList = ($classroom->period_type === 'ganjil') ? self::GANJIL : self::GENAP;
 
@@ -189,7 +199,12 @@ class ClassroomController extends Controller
             (string) $cp->id => (string) ($cp->pivot->lecturer_id ?? ''),
         ])->toArray();
 
-        return view('kaprodi.classrooms.edit', compact('classroom', 'dosens', 'courses', 'cpmkLecturerMap'));
+        return view('kaprodi.classrooms.edit', compact(
+            'classroom',
+            'dosens',
+            'courses',
+            'cpmkLecturerMap'
+        ));
     }
 
     /* ── Update ──────────────────────────────────────────────── */
@@ -223,7 +238,8 @@ class ClassroomController extends Controller
 
             $classroom->cpmks()->sync($syncData);
 
-            if ($request->headers->get('referer') && str_contains($request->headers->get('referer'), '/edit')) {
+            $referer = $request->headers->get('referer');
+            if ($referer && str_contains($referer, '/edit')) {
                 return redirect()->route('classrooms.edit', $classroom)
                     ->with('success', 'Penugasan CPMK berhasil disimpan.');
             }
@@ -250,7 +266,8 @@ class ClassroomController extends Controller
             ? 'Kelas berhasil diarsipkan.'
             : 'Kelas berhasil dikembalikan dari arsip.';
 
-        return redirect()->route('classrooms.index')->with('success', $message);
+        return redirect()->route('classrooms.index')
+            ->with('success', $message);
     }
 
     /* ── Unenroll student ────────────────────────────────────── */
@@ -266,6 +283,7 @@ class ClassroomController extends Controller
     {
         $classroom->delete();
 
-        return redirect()->route('classrooms.index')->with('success', 'Kelas berhasil dihapus.');
+        return redirect()->route('classrooms.index')
+            ->with('success', 'Kelas berhasil dihapus.');
     }
 }
