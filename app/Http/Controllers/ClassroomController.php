@@ -45,6 +45,19 @@ class ClassroomController extends Controller
         return $dosenQuery->get();
     }
 
+    private function buildCpmkSyncData(array $cpmkLecturers): array
+    {
+        $syncData = [];
+
+        foreach ($cpmkLecturers as $cpmkId => $lecturerId) {
+            if ($lecturerId) {
+                $syncData[$cpmkId] = ['lecturer_id' => $lecturerId];
+            }
+        }
+
+        return $syncData;
+    }
+
     /* ── Index ───────────────────────────────────────────────── */
     public function index(Request $request)
     {
@@ -160,13 +173,9 @@ class ClassroomController extends Controller
         ]);
 
         if (!empty($validated['cpmk_lecturers'])) {
-            $syncData = [];
-            foreach ($validated['cpmk_lecturers'] as $cpmkId => $lecturerId) {
-                if ($lecturerId) {
-                    $syncData[$cpmkId] = ['lecturer_id' => $lecturerId];
-                }
-            }
-            $classroom->cpmks()->sync($syncData);
+            $classroom->cpmks()->sync(
+                $this->buildCpmkSyncData($validated['cpmk_lecturers'])
+            );
         }
 
         return redirect()->route('classrooms.index')
@@ -229,14 +238,9 @@ class ClassroomController extends Controller
         ]);
 
         if ($request->has('cpmk_lecturers')) {
-            $syncData = [];
-            foreach (($validated['cpmk_lecturers'] ?? []) as $cpmkId => $lecturerId) {
-                if ($lecturerId) {
-                    $syncData[$cpmkId] = ['lecturer_id' => $lecturerId];
-                }
-            }
-
-            $classroom->cpmks()->sync($syncData);
+            $classroom->cpmks()->sync(
+                $this->buildCpmkSyncData($validated['cpmk_lecturers'] ?? [])
+            );
 
             $referer = $request->headers->get('referer');
             if ($referer && str_contains($referer, '/edit')) {
