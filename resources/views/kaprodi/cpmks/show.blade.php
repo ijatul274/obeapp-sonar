@@ -44,7 +44,6 @@
                         @foreach($sub->indicators as $ind)
                             <li class="list-group-item d-flex justify-content-between align-items-start gap-2">
                                 <span class="d-flex gap-2"><span style="color:#7c3aed;">&#9656;</span><span>{{ $ind->description }}</span></span>
-                                <span class="badge bg-light text-secondary border" title="Bobot indikator ditentukan dosen pengampu">bobot: dosen</span>
                             </li>
                         @endforeach
                     </ul>

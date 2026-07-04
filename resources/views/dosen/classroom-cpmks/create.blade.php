@@ -16,8 +16,9 @@
             <div class="small fw-bold text-uppercase" style="color:var(--obe-red); letter-spacing:.05em;">Template CPMK dari Mata Kuliah (Referensi)</div>
             <div class="d-flex flex-wrap gap-1">
                 @foreach($templates as $tmpl)
+                    @php $tmplData = ['code' => $tmpl->code, 'desc' => $tmpl->description, 'cpl' => $tmpl->cpl_id, 'pct' => $tmpl->percentage]; @endphp
                     <button type="button" class="btn btn-sm btn-obe-outline d-inline-flex align-items-center gap-1"
-                            onclick='fillTemplate(@json(["code"=>$tmpl->code,"desc"=>$tmpl->description,"cpl"=>$tmpl->cpl_id,"pct"=>$tmpl->percentage]))'>
+                            onclick="fillTemplate({{ Js::from($tmplData) }})">
                         <span style="font-family:monospace;">{{ $tmpl->code }}</span>
                         @if($tmpl->cpl)<small class="text-muted">{{ $tmpl->cpl->code }}</small>@endif
                     </button>

@@ -168,7 +168,6 @@
                                         @foreach($sub->indicators as $ind)
                                             <li class="d-flex justify-content-between align-items-start gap-2 small px-2 py-1">
                                                 <span class="d-flex gap-2"><span style="color:#7c3aed;">▸</span><span>{{ $ind->description }}</span></span>
-                                                <span class="badge bg-light text-secondary border" title="Bobot indikator ditentukan dosen pengampu">bobot: dosen</span>
                                             </li>
                                         @endforeach
                                     </ul>
@@ -320,8 +319,7 @@
                     <li class="d-flex justify-content-between align-items-center gap-2 small py-1 ps-3 pe-2">
                         <span><span style="color:#7c3aed;">&#9656;</span> ${cpfEsc(ind.description)}</span>
                         <span class="d-flex align-items-center gap-2">
-                            <span class="badge bg-light text-secondary border" title="Bobot indikator ditentukan dosen pengampu">bobot: dosen</span>
-                            <button type="button" class="btn btn-sm btn-outline-danger border-0 py-0" onclick="removeInd(${si},${ii})" title="Hapus indikator">&#128465;</button>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger border-0 py-0" onclick="removeInd(${si},${ii})" title="Hapus indikator">&#128465;</button>
                         </span>
                     </li>`).join('') || '<li class="text-muted small fst-italic ps-3 py-1">Belum ada indikator.</li>';
 

@@ -101,8 +101,6 @@
                                     <span class="badge rounded-pill flex-shrink-0" style="background:var(--obe-red-soft); color:var(--obe-red);">{{ $loop->iteration }}</span>
                                     <div class="flex-grow-1">
                                         <div class="small fw-semibold">{{ $indicator->description }}</div>
-                                        @php($indWeight = $indicator->weightForClassroom($classroom->id))
-                                        <div class="text-muted small">Bobot <span class="fst-italic">(otomatis dari komponen)</span>: <span class="fw-bold" style="color:var(--obe-red);">{{ number_format($indWeight, 1) }}%</span></div>
 
                                         @if($indicator->assessments->where('classroom_id', $classroom->id)->count() > 0)
                                             <div class="text-muted small mt-2 mb-1" style="font-size:.72rem;">
@@ -198,10 +196,10 @@
                                                                 <td class="text-center text-muted small" x-text="i+1"></td>
                                                                 <td><input type="text" x-model="c.nama" class="form-control form-control-sm" placeholder="Nama komponen"></td>
                                                                 <td>
-                                                                    <select x-model="c.indicator_id" class="form-select form-select-sm" :class="String(c.indicator_id)===''?'border-danger':''">
-                                                                        <option value="">— pilih indikator —</option>
+                                                                    <select @change="c.indicator_id = $event.target.value" class="form-select form-select-sm" :class="String(c.indicator_id)===''?'border-danger':''">
+                                                                        <option value="" :selected="String(c.indicator_id)===''">— pilih indikator —</option>
                                                                         <template x-for="ind in indicators" :key="ind.id">
-                                                                            <option :value="ind.id" x-text="ind.description"></option>
+                                                                            <option :value="ind.id" :selected="String(ind.id)===String(c.indicator_id)" x-text="ind.description"></option>
                                                                         </template>
                                                                     </select>
                                                                 </td>
@@ -219,10 +217,10 @@
                                                             <td class="text-center fw-bold" style="color:var(--obe-red);">+</td>
                                                             <td><input type="text" x-model="newRow.nama" @keydown.enter.prevent="addRow()" placeholder="Nama komponen..." class="form-control form-control-sm"></td>
                                                             <td>
-                                                                <select x-model="newRow.indicator_id" class="form-select form-select-sm">
-                                                                    <option value="">— pilih indikator —</option>
+                                                                <select @change="newRow.indicator_id = $event.target.value" class="form-select form-select-sm">
+                                                                    <option value="" :selected="String(newRow.indicator_id)===''">— pilih indikator —</option>
                                                                     <template x-for="ind in indicators" :key="ind.id">
-                                                                        <option :value="ind.id" x-text="ind.description"></option>
+                                                                        <option :value="ind.id" :selected="String(ind.id)===String(newRow.indicator_id)" x-text="ind.description"></option>
                                                                     </template>
                                                                 </select>
                                                             </td>

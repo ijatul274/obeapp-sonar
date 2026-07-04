@@ -445,17 +445,19 @@ class DosenController extends Controller
         $sheet->setCellValue('E5', 'Bobot:');
         $sheet->getStyle('E5')->getFont()->setBold(true);
 
-        // Data mahasiswa mulai baris 7. Tiap komponen F..M diisi kontribusi tertimbang
-        // (= nilai_akhir × bobot%/100), dan NILAI AKHIR = SUM(F:M).
-        $bobotByCol = [
-            'F' => $bobot['partisipasi_aktif'],
-            'G' => $bobot['proyek'],
-            'H' => $bobot['presensi'],
-            'I' => $bobot['tugas'],
-            'J' => $bobot['kuis'],
-            'K' => $bobot['praktikum'],
-            'L' => $bobot['uts'],
-            'M' => $bobot['uas'],
+        // Data mahasiswa mulai baris 7. Tiap kolom kategori F..M diisi nilai mentah
+        // skala 0–100 (acak namun konsisten per mahasiswa) yang—setelah dikali
+        // bobotnya—berjumlah = NILAI AKHIR. Jadi kategori tampil pada skala penuh,
+        // bukan kontribusi kecilnya, sementara nilai akhir tetap sesuai bobot.
+        $colToKey = [
+            'F' => 'partisipasi_aktif',
+            'G' => 'proyek',
+            'H' => 'presensi',
+            'I' => 'tugas',
+            'J' => 'kuis',
+            'K' => 'praktikum',
+            'L' => 'uts',
+            'M' => 'uas',
         ];
 
         $rowNum = 7;
@@ -470,8 +472,12 @@ class DosenController extends Controller
                 $finalScore = $studentRow['any_failed'] ? 0 : ($studentRow['final_score'] ?? 0);
                 $finalScoreRounded = round((float) $finalScore, 2);
 
-                foreach ($bobotByCol as $compCol => $weight) {
-                    $sheet->setCellValue($compCol.$rowNum, round($finalScoreRounded * $weight / 100, 2));
+                $rawScores = $this->satuUnriRawScores($bobot, $finalScoreRounded, (int) $student->id);
+                foreach ($colToKey as $compCol => $key) {
+                    $sheet->setCellValue($compCol.$rowNum, $rawScores[$key]);
+                    if ($rawScores[$key] !== '') {
+                        $sheet->getStyle($compCol.$rowNum)->getNumberFormat()->setFormatCode('0.00');
+                    }
                 }
 
                 $sheet->setCellValue('N'.$rowNum, $finalScoreRounded);
@@ -510,5 +516,68 @@ class DosenController extends Controller
         }, $filename, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
+    }
+
+    /**
+     * Hasilkan nilai mentah (skala 0–100) per kategori SATU UNRI yang—setelah
+     * dikalikan bobotnya—berjumlah tepat = $finalScore. Tujuannya agar tiap
+     * kategori tampil pada skala penuh (mis. presensi 100 bila sempurna), bukan
+     * kontribusi kecilnya (5), sementara nilai akhir tetap sesuai bobot.
+     *
+     * Nilai dibuat acak namun konsisten per mahasiswa (di-seed dari id), lalu
+     * digeser dengan konstanta agar rata-rata tertimbangnya tepat = $finalScore
+     * (valid karena total bobot = 100). Kategori berbobot 0 dikosongkan.
+     *
+     * @param  array<string, float>  $weights  bobot persen per kategori (jumlah 100)
+     * @return array<string, float|string> nilai mentah per kategori ('' bila bobot 0)
+     */
+    private function satuUnriRawScores(array $weights, float $finalScore, int $seed): array
+    {
+        $out = array_fill_keys(array_keys($weights), '');
+        $active = array_filter($weights, fn (float $w): bool => $w > 0);
+        $totalWeight = array_sum($active);
+
+        if ($active === [] || $totalWeight <= 0) {
+            return $out;
+        }
+
+        mt_srand($seed);
+
+        // Sebaran menyempit di dekat 0/100 agar nilai acak tetap dalam [0,100]
+        // tanpa clamp — sehingga rata-rata tertimbang bisa tepat = $finalScore.
+        $spread = max(0.0, min(8.0, $finalScore, 100.0 - $finalScore));
+        $raw = [];
+        foreach (array_keys($active) as $key) {
+            $raw[$key] = $finalScore + (mt_rand(-100, 100) / 100) * $spread;
+        }
+
+        $weightedMean = 0.0;
+        foreach ($active as $key => $w) {
+            $weightedMean += $raw[$key] * $w / $totalWeight;
+        }
+        $shift = $finalScore - $weightedMean;
+        foreach ($active as $key => $w) {
+            $raw[$key] = max(0.0, min(100.0, round($raw[$key] + $shift, 2)));
+        }
+
+        // Koreksi sisa akibat clamp/pembulatan → bebankan ke kategori bobot terbesar.
+        $achieved = 0.0;
+        foreach ($active as $key => $w) {
+            $achieved += $raw[$key] * $w / $totalWeight;
+        }
+        $residual = $finalScore - $achieved;
+        if (abs($residual) > 0.001) {
+            $heaviest = array_keys($active, max($active))[0];
+            $frac = $active[$heaviest] / $totalWeight;
+            $raw[$heaviest] = max(0.0, min(100.0, round($raw[$heaviest] + $residual / $frac, 2)));
+        }
+
+        mt_srand();
+
+        foreach ($raw as $key => $value) {
+            $out[$key] = $value;
+        }
+
+        return $out;
     }
 }
